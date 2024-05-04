@@ -1,37 +1,63 @@
 import machine
 import utime
-
-# MPU6050 I2C address
-MPU6050_ADDR = 0x68
-
-# Register addresses
-MPU6050_REG_PWR_MGMT_1 = 0x6B
-MPU6050_REG_SMPLRT_DIV = 0x19
-MPU6050_REG_ACCEL_CONFIG = 0x1C
-MPU6050_REG_GYRO_CONFIG = 0x1B
-MPU6050_REG_ACCEL_XOUT_H = 0x3B
-MPU6050_REG_TEMP_OUT_H = 0x41
-MPU6050_REG_GYRO_XOUT_H = 0x43
+import time
 
 # Configure I2C
 i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(1))
 
-# Initialize MPU6050
-i2c.writeto_mem(MPU6050_ADDR, MPU6050_REG_PWR_MGMT_1, b'\x00')  # Wake up MPU6050
-i2c.writeto_mem(MPU6050_ADDR, MPU6050_REG_SMPLRT_DIV, b'\x00')  # Sample rate divider (1kHz)
-i2c.writeto_mem(MPU6050_ADDR, MPU6050_REG_ACCEL_CONFIG, b'\x00')  # Accelerometer scale (+/- 2g)
-i2c.writeto_mem(MPU6050_ADDR, MPU6050_REG_GYRO_CONFIG, b'\x00')  # Gyroscope scale (+/- 250deg/s)
 
-# Function to read sensor data
-def read_sensor_data():
-    data = i2c.readfrom_mem(MPU6050_ADDR, MPU6050_REG_ACCEL_XOUT_H, 14)
-    accel_x = (data[0] << 8) | data[1]
-    accel_y = (data[2] << 8) | data[3]
-    accel_z = (data[4] << 8) | data[5]
-    gyro_x = (data[8] << 8) | data[9]
-    gyro_y = (data[10] << 8) | data[11]
-    gyro_z = (data[12] << 8) | data[13]
-    return accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
+class MPU6050():
+	# MPU6050 I2C address
+	MPU6050_ADDR = 0x68
+
+	# Register addresses
+	MPU6050_REG_PWR_MGMT_1 = 0x6B
+	MPU6050_REG_SMPLRT_DIV = 0x19
+	MPU6050_REG_ACCEL_CONFIG = 0x1C
+	MPU6050_REG_GYRO_CONFIG = 0x1B
+	MPU6050_REG_ACCEL_XOUT_H = 0x3B
+	def __init__(self, i2c):
+		self.i2c = i2c
+		self.addr = MPU6050.MPU6050_ADDR
+		self.accel_x = 0
+		self.accel_y = 0
+		self.accel_z = 0
+		self.gyro_x = 0
+		self.gyro_y = 0
+		self.gyro_z = 0
+		# Initialize MPU6050
+		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_PWR_MGMT_1, b'\x00')  # Wake up MPU6050
+		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_SMPLRT_DIV, b'\x00')  # Sample rate divider (1kHz)
+		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_ACCEL_CONFIG, b'\x00')  # Accelerometer scale (+/- 2g)
+		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_GYRO_CONFIG, b'\x00')  # Gyroscope scale (+/- 250deg/s)
+
+		
+	def read_sensor_data(self):
+		data = i2c.readfrom_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_ACCEL_XOUT_H, 14)
+		self.accel_x = (data[0] << 8) | data[1]
+		self.accel_y = (data[2] << 8) | data[3]
+		self.accel_z = (data[4] << 8) | data[5]
+		self.gyro_x = (data[8] << 8) | data[9]
+		self.gyro_y = (data[10] << 8) | data[11]
+		self.gyro_z = (data[12] << 8) | data[13]
+		
+
+MPU6050_Sensor = MPU6050(i2c)  
+		
+
+def timer1_callback(timer):
+	#start_time = time.ticks_us()
+	MPU6050_Sensor.read_sensor_data()
+	#measure time
+	#stop_time = time.ticks_us()
+	#calculate time
+	#delta_time = time.ticks_diff(stop_time, start_time)
+	
+	#display time in seconds
+	#print("Time: ", delta_time/1000, "ms\n")
+
+def timer2_callback(timer):
+	print('ax', MPU6050_Sensor.accel_x, 'ay', MPU6050_Sensor.accel_y, 'az', MPU6050_Sensor.accel_z, 'gx', MPU6050_Sensor.gyro_x, 'gy', MPU6050_Sensor.gyro_y, 'gz', MPU6050_Sensor.gyro_z)
 
 
 # Set PLL to maximum frequency (250 MHz)
@@ -40,14 +66,16 @@ machine.freq(250000000)
 # Print current CPU frequency
 cpu_frequency = machine.freq()
 print("CPU Frequency:", cpu_frequency, "Hz")
+
+
+
+timer1 = machine.Timer()
+timer1.init(period=1, mode=machine.Timer.PERIODIC, callback=timer1_callback)
+
+timer2 = machine.Timer()
+timer2.init(period=10, mode=machine.Timer.PERIODIC, callback=timer2_callback)
 # Main loop
+
+
 while True:
-    start_time = utime.ticks_us()  # Get current time
-    accel_x, accel_y, accel_z,  gyro_x, gyro_y, gyro_z = read_sensor_data()
-    # Process sensor data as required
-    end_time = utime.ticks_us()  # Get current time
-    execution_time = utime.ticks_diff(end_time, start_time)  # Calculate execution time
-    if execution_time < 10:  # Maintain 1 ms interval
-        utime.sleep_ms(1 - execution_time)
-    print('Time:', execution_time, 'us')
-    print('ax', accel_x, 'ay', accel_y, 'az', accel_z, 'gx', gyro_x, 'gy', gyro_y, 'gz', gyro_z)
+	utime.sleep(1)
