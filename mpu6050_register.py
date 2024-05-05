@@ -1,7 +1,8 @@
 import machine
 import utime
 import time
-
+import sdcard
+import uos
 # Configure I2C
 i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(1))
 
@@ -43,11 +44,54 @@ class MPU6050():
 		
 
 MPU6050_Sensor = MPU6050(i2c)  
-		
+
+# Assign chip select (CS) pin (and start it high)
+cs = machine.Pin(1, machine.Pin.OUT)
+ 
+# Intialize SPI peripheral (start with 1 MHz)
+spi = machine.SPI(0,
+                  baudrate=1000000,
+                  polarity=0,
+                  phase=0,
+                  bits=8,
+                  firstbit=machine.SPI.MSB,
+                  sck=machine.Pin(2),
+                  mosi=machine.Pin(3),
+                  miso=machine.Pin(4))
+ 
+# Initialize SD card
+try:
+	sd = sdcard.SDCard(spi, cs)
+except:
+	print("SD card not found")
+
+try:
+	# Mount filesystem
+	vfs = uos.VfsFat(sd)
+	uos.mount(vfs, "/sd")
+except:
+	print("File system not found")
+ 
+try:
+	# Create a file and write something to it
+	with open("/sd/test01.txt", "w") as file:
+		file.write("test01\r\n")
+except:
+	print("File not found")
+ 
+# Open the file we just created and read from it
+#with open("/sd/test01.txt", "r") as file:
+#    data = file.read()
+#    print(data)
+
 
 def timer1_callback(timer):
 	#start_time = time.ticks_us()
 	MPU6050_Sensor.read_sensor_data()
+	try:
+		file.write(str(MPU6050_Sensor.accel_x) + '\t' + str(MPU6050_Sensor.accel_y) + '\t' + str(MPU6050_Sensor.accel_z) + '\t' + str(MPU6050_Sensor.gyro_x) + '\t' + str(MPU6050_Sensor.gyro_y) + '\t' + str(MPU6050_Sensor.gyro_z) + '\n')
+	except:
+		print("File not found")
 	#measure time
 	#stop_time = time.ticks_us()
 	#calculate time
