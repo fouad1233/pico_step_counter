@@ -4,7 +4,7 @@ import time
 import sdcard
 import uos
 # Configure I2C
-i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(1))
+i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(17))
 pin = machine.Pin("LED", machine.Pin.OUT)
 
 class MPU6050():
