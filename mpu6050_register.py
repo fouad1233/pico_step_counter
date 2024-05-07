@@ -1,10 +1,13 @@
 import machine
 import utime
-import time
-import sdcard
+import sys
 import uos
 # Configure I2C
 i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(1))
+#uart = machine.UART(0, baudrate=115200)  # Assuming UART0, adjust the UART number as needed
+#uos.dupterm(uart)
+
+#uart.init(baudrate=115200)  # Set baud rate to 115200 bps or adjust to your desired value
 
 
 class MPU6050():
@@ -27,14 +30,14 @@ class MPU6050():
 		self.gyro_y = 0
 		self.gyro_z = 0
 		# Initialize MPU6050
-		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_PWR_MGMT_1, b'\x00')  # Wake up MPU6050
-		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_SMPLRT_DIV, b'\x00')  # Sample rate divider (1kHz)
-		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_ACCEL_CONFIG, b'\x00')  # Accelerometer scale (+/- 2g)
-		i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_GYRO_CONFIG, b'\x00')  # Gyroscope scale (+/- 250deg/s)
+		self.i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_PWR_MGMT_1, b'\x00')  # Wake up MPU6050
+		self.i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_SMPLRT_DIV, b'\x00')  # Sample rate divider (1kHz)
+		self.i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_ACCEL_CONFIG, b'\x00')  # Accelerometer scale (+/- 2g)
+		self.i2c.writeto_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_GYRO_CONFIG, b'\x00')  # Gyroscope scale (+/- 250deg/s)
 
 		
 	def read_sensor_data(self):
-		data = i2c.readfrom_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_ACCEL_XOUT_H, 14)
+		data = self.i2c.readfrom_mem(MPU6050.MPU6050_ADDR, MPU6050.MPU6050_REG_ACCEL_XOUT_H, 14)
 		self.accel_x = (data[0] << 8) | data[1]
 		self.accel_y = (data[2] << 8) | data[3]
 		self.accel_z = (data[4] << 8) | data[5]
@@ -46,7 +49,7 @@ class MPU6050():
 MPU6050_Sensor = MPU6050(i2c)  
 
 # Assign chip select (CS) pin (and start it high)
-cs = machine.Pin(1, machine.Pin.OUT)
+cs = machine.Pin(5, machine.Pin.OUT)
  
 # Intialize SPI peripheral (start with 1 MHz)
 spi = machine.SPI(0,
@@ -59,25 +62,7 @@ spi = machine.SPI(0,
                   mosi=machine.Pin(3),
                   miso=machine.Pin(4))
  
-# Initialize SD card
-try:
-	sd = sdcard.SDCard(spi, cs)
-except:
-	print("SD card not found")
 
-try:
-	# Mount filesystem
-	vfs = uos.VfsFat(sd)
-	uos.mount(vfs, "/sd")
-except:
-	print("File system not found")
- 
-try:
-	# Create a file and write something to it
-	with open("/sd/test01.txt", "w") as file:
-		file.write("test01\r\n")
-except:
-	print("File not found")
  
 # Open the file we just created and read from it
 #with open("/sd/test01.txt", "r") as file:
@@ -88,10 +73,12 @@ except:
 def timer1_callback(timer):
 	#start_time = time.ticks_us()
 	MPU6050_Sensor.read_sensor_data()
-	try:
-		file.write(str(MPU6050_Sensor.accel_x) + '\t' + str(MPU6050_Sensor.accel_y) + '\t' + str(MPU6050_Sensor.accel_z) + '\t' + str(MPU6050_Sensor.gyro_x) + '\t' + str(MPU6050_Sensor.gyro_y) + '\t' + str(MPU6050_Sensor.gyro_z) + '\n')
-	except:
-		print("File not found")
+	print('ax', MPU6050_Sensor.accel_x, 'ay', MPU6050_Sensor.accel_y, 'az', MPU6050_Sensor.accel_z, 'gx', MPU6050_Sensor.gyro_x, 'gy', MPU6050_Sensor.gyro_y, 'gz', MPU6050_Sensor.gyro_z)
+
+	#try:
+		#file.write(str(MPU6050_Sensor.accel_x) + '\t' + str(MPU6050_Sensor.accel_y) + '\t' + str(MPU6050_Sensor.accel_z) + '\t' + str(MPU6050_Sensor.gyro_x) + '\t' + str(MPU6050_Sensor.gyro_y) + '\t' + str(MPU6050_Sensor.gyro_z) + '\n')
+	#except:
+		#print("File not found")
 	#measure time
 	#stop_time = time.ticks_us()
 	#calculate time
@@ -100,8 +87,8 @@ def timer1_callback(timer):
 	#display time in seconds
 	#print("Time: ", delta_time/1000, "ms\n")
 
-def timer2_callback(timer):
-	print('ax', MPU6050_Sensor.accel_x, 'ay', MPU6050_Sensor.accel_y, 'az', MPU6050_Sensor.accel_z, 'gx', MPU6050_Sensor.gyro_x, 'gy', MPU6050_Sensor.gyro_y, 'gz', MPU6050_Sensor.gyro_z)
+#def timer2_callback(timer):
+#	print('ax', MPU6050_Sensor.accel_x, 'ay', MPU6050_Sensor.accel_y, 'az', MPU6050_Sensor.accel_z, 'gx', MPU6050_Sensor.gyro_x, 'gy', MPU6050_Sensor.gyro_y, 'gz', MPU6050_Sensor.gyro_z)
 
 
 # Set PLL to maximum frequency (250 MHz)
@@ -114,10 +101,10 @@ print("CPU Frequency:", cpu_frequency, "Hz")
 
 
 timer1 = machine.Timer()
-timer1.init(period=1, mode=machine.Timer.PERIODIC, callback=timer1_callback)
+timer1.init(period=5, mode=machine.Timer.PERIODIC, callback=timer1_callback)
 
-timer2 = machine.Timer()
-timer2.init(period=10, mode=machine.Timer.PERIODIC, callback=timer2_callback)
+#timer2 = machine.Timer()
+#timer2.init(period=10, mode=machine.Timer.PERIODIC, callback=timer2_callback)
 # Main loop
 
 

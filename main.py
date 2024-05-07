@@ -4,7 +4,7 @@ import time
 import sdcard
 import uos
 # Configure I2C
-i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(17))
+i2c = machine.I2C(0,freq=400000, sda=machine.Pin(0), scl=machine.Pin(1))
 pin = machine.Pin("LED", machine.Pin.OUT)
 
 class MPU6050():
@@ -46,7 +46,7 @@ class MPU6050():
 MPU6050_Sensor = MPU6050(i2c)  
 
 # Assign chip select (CS) pin (and start it high)
-cs = machine.Pin(1, machine.Pin.OUT)
+cs = machine.Pin(5, machine.Pin.OUT)
  
 # Intialize SPI peripheral (start with 1 MHz)
 spi = machine.SPI(0,

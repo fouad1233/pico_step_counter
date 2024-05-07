@@ -39,7 +39,7 @@ def parse_data(file):
     return ax, ay, az, gx, gy, gz
 
 #parse the data
-ax, ay, az, gx, gy, gz = parse_data('data.txt')
+ax, ay, az, gx, gy, gz = parse_data('esra_normal_yuruyor.txt')
 
 #plot the data with subplots
 fig, axs = plt.subplots(3, 2, figsize=(15, 10))
