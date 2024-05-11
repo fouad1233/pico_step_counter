@@ -98,19 +98,20 @@ except:
 #    data = file.read()
 #    print(data)
 sdCardError = False
-
+file_path = "/sd/test" +str(test_num) +".txt"
+file = open(file_path,"a")
 def timer1_callback(timer):
     global sdCardError
     #start_time = time.ticks_us()
     MPU6050_Sensor.read_sensor_data()
     try:
         timestmap = time.ticks_ms()
-        file = open("/sd/test" +str(test_num) +".txt","a")
         file.write(str(timestmap)+ '\t' + str(MPU6050_Sensor.accel_x) + '\t' + str(MPU6050_Sensor.accel_y) + '\t' + str(MPU6050_Sensor.accel_z) + '\t' + str(MPU6050_Sensor.gyro_x) + '\t' + str(MPU6050_Sensor.gyro_y) + '\t' + str(MPU6050_Sensor.gyro_z) + '\n')
-        file.close()
-        sdCardError = False
+        #file.close()
+#        sdCardError = False
     except:
-        sdCardError = True
+        pass
+#        sdCardError = True
         
         #print("File not found")
     #measure time
@@ -121,10 +122,10 @@ def timer1_callback(timer):
     #display time in seconds
     #print("Time: ", delta_time/1000, "ms\n")
 
-def timer2_callback(timer):
-    print('ax', MPU6050_Sensor.accel_x, 'ay', MPU6050_Sensor.accel_y, 'az', MPU6050_Sensor.accel_z, 'gx', MPU6050_Sensor.gyro_x, 'gy', MPU6050_Sensor.gyro_y, 'gz', MPU6050_Sensor.gyro_z)
-    if sdCardError:
-        pin.toggle()
+#def timer2_callback(timer):
+#    print('ax', MPU6050_Sensor.accel_x, 'ay', MPU6050_Sensor.accel_y, 'az', MPU6050_Sensor.accel_z, 'gx', MPU6050_Sensor.gyro_x, 'gy', MPU6050_Sensor.gyro_y, 'gz', MPU6050_Sensor.gyro_z)
+#    if sdCardError:
+#        pin.toggle()
 
 
 # Set PLL to maximum frequency (250 MHz)
@@ -137,12 +138,12 @@ print("CPU Frequency:", cpu_frequency, "Hz")
 
 
 timer1 = machine.Timer()
-timer1.init(period=100, mode=machine.Timer.PERIODIC, callback=timer1_callback)
+timer1.init(period=10, mode=machine.Timer.PERIODIC, callback=timer1_callback)
 
-timer2 = machine.Timer()
-timer2.init(period=1000, mode=machine.Timer.PERIODIC, callback=timer2_callback)
+#timer2 = machine.Timer()
+#timer2.init(period=1000, mode=machine.Timer.PERIODIC, callback=timer2_callback)
 # Main loop
 
 
 while True:
-    utime.sleep(1)
+    utime.sleep(100)
