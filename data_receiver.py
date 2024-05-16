@@ -6,7 +6,7 @@ serial_port = '/dev/cu.usbmodem12301'  # Change this to the appropriate port
 baud_rate = 9600
 
 # File path
-file_path = 'test_data1.txt'  # Change this path as needed
+file_path = 'esra_cevrede_yuruyor.txt'  # Change this path as needed
 
 try:
     # Open the serial port
